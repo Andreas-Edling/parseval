@@ -15,13 +15,20 @@ use crate::parsers::{
     either,
     pred,
     and_then,
+    any_char,
 };
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DataOrElements {
+    Data(String),
+    Elements(Vec<Element>),
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Element {
     pub name: String,
     pub attributes: Vec<(String, String)>,
-    pub children: Vec<Element>,
+    pub data_or_elements: DataOrElements,
 }
 
 pub fn element<'a>() -> impl Parser<'a, Element> {
@@ -81,7 +88,7 @@ pub fn single_element<'a>() -> impl Parser<'a, Element> {
             Element {
                 name,
                 attributes,
-                children: vec![],
+                data_or_elements: DataOrElements::Elements(vec![]),
             }
         }
     )
@@ -99,7 +106,7 @@ pub fn xml_definition_element<'a>() -> impl Parser<'a, Element> {
             Element {
                 name,
                 attributes,
-                children: vec![],
+                data_or_elements: DataOrElements::Elements(vec![]),
             }
         }
     )
@@ -112,7 +119,7 @@ pub fn opening_element<'a>() -> impl Parser<'a, Element> {
             Element {
                 name,
                 attributes,
-                children: vec![],
+                data_or_elements: DataOrElements::Elements(vec![]),
             }
         }
     )
@@ -132,18 +139,42 @@ pub fn closing_element<'a>(expected_name: String) -> impl Parser<'a, String> {
 }
 
 
+fn data<'a>() -> impl Parser<'a, String> {
+    map( 
+        zero_or_more(pred(any_char, |c| *c != '<')),
+        |characters| characters.into_iter().collect()
+    )
+}
+
+fn data_or_elements<'a>() -> impl Parser<'a, DataOrElements> {
+    either(
+        map(
+            zero_or_more(element()),
+            |elements| {
+                DataOrElements::Elements(elements)
+            }
+        ),
+        map(
+            data(),
+            |data| {
+                DataOrElements::Data(data)
+            }
+        )
+    )
+}
+
 fn parent_element<'a>() -> impl Parser<'a, Element> {
     and_then(
         opening_element(),
         |elem1|{
             map(
                 left(
-                    zero_or_more(element()), 
+                    data_or_elements(), //zero_or_more(element()), 
                     closing_element(elem1.name.clone())
                 ),
-                move |children| {
+                move |data_or_elements| {
                     let mut elem1 = elem1.clone();
-                    elem1.children = children;
+                    elem1.data_or_elements = data_or_elements;
                     elem1
                 }
             )
@@ -183,22 +214,24 @@ mod tests {
         let parsed_doc = Element {
             name: "top".to_string(),
             attributes: vec![("label".to_string(), "Top".to_string())],
-            children: vec![
+            data_or_elements: DataOrElements::Elements(vec![
                 Element {
                     name: "semi-bottom".to_string(),
                     attributes: vec![("label".to_string(), "Bottom".to_string())],
-                    children: vec![],
+                    data_or_elements: DataOrElements::Elements(vec![]),
                 },
                 Element {
                     name: "middle".to_string(),
                     attributes: vec![],
-                    children: vec![Element {
-                        name: "bottom".to_string(),
-                        attributes: vec![("label".to_string(), "Another bottom".to_string())],
-                        children: vec![],
-                    }],
+                    data_or_elements: DataOrElements::Elements(vec![
+                        Element {
+                            name: "bottom".to_string(),
+                            attributes: vec![("label".to_string(), "Another bottom".to_string())],
+                            data_or_elements: DataOrElements::Elements(vec![]),
+                        }
+                    ]),
                 },
-            ],
+            ],)
         };
         assert_eq!(Ok(("", parsed_doc)), element().parse(doc));
     }
