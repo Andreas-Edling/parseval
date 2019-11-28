@@ -9,6 +9,7 @@ use crate::parsers::{
     match_literal,
     string_in_quotes,
     zero_or_more,
+    one_or_more,
     whitespace1,
     trim,
     map,
@@ -149,7 +150,7 @@ fn data<'a>() -> impl Parser<'a, String> {
 fn data_or_elements<'a>() -> impl Parser<'a, DataOrElements> {
     either(
         map(
-            zero_or_more(element()),
+            one_or_more(element()),
             |elements| {
                 DataOrElements::Elements(elements)
             }
@@ -202,6 +203,67 @@ mod tests {
         );
     }
     
+    #[test]
+    fn test_data_or_elements_with_data() {
+        let doc = r#"foo</elem>"#;
+        let res = data_or_elements().parse(doc);
+        assert_eq!(Ok(("</elem>", DataOrElements::Data("foo".to_string()))), res);
+    }
+
+    #[test]
+    fn test_data_or_elements_with_element() {
+        let doc = r#"<foo/></elem>"#;
+        let res = data_or_elements().parse(doc);
+        let expected = DataOrElements::Elements(vec![
+            Element{
+                name: "foo".to_string(),
+                data_or_elements: DataOrElements::Elements(vec![]),
+                attributes: vec![],
+            }
+        ]);
+        assert_eq!(Ok(("</elem>", expected)), res);
+    }
+
+    #[test]
+    fn test_data_or_elements_with_nothing() {
+        let doc = r#"</elem>"#;
+        let res = data_or_elements().parse(doc);
+        let expected = DataOrElements::Data("".to_string());
+        assert_eq!(Ok(("</elem>", expected)), res);
+    }
+
+    #[test]
+    fn test_element_with_data() {
+        let doc = r#"<elem>foo</elem>"#;
+        let res = element().parse(doc);
+        let expected = Element {
+            name: "elem".to_string(),
+            data_or_elements: DataOrElements::Data("foo".to_string()),
+            attributes: vec![],
+        };
+        assert_eq!(res, Ok(("",expected)));
+    }
+
+    //#[test]
+    fn test_elements_with_inner() {
+        let doc = r#"<elem><inner_elem/></elem>"#;
+        let res = element().parse(doc);
+        let expected = Element {
+            name: "elem".to_string(),
+            data_or_elements: DataOrElements::Elements(
+                vec![
+                    Element{ 
+                        name: "inner_element".to_string(),
+                        data_or_elements: DataOrElements::Data("".to_string()),
+                        attributes: vec![],
+                    }
+                ]
+            ),
+            attributes: vec![],
+        };
+        assert_eq!(res, Ok(("",expected)));
+    }
+
     #[test]
     fn xml_parser() {
         let doc = r#"
