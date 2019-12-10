@@ -214,7 +214,7 @@ where
 // -- data parsers --------------------------------------------------------------
 
 
-pub fn parse_array_f32<'a>() -> impl Parser<'a, Vec<f32>> {
+pub fn array_f32<'a>() -> impl Parser<'a, Vec<f32>> {
     
     let number =
         one_or_more(
@@ -239,7 +239,7 @@ pub fn parse_array_f32<'a>() -> impl Parser<'a, Vec<f32>> {
     zero_or_more(number)
 }
 
-pub fn parse_array_u32<'a>() -> impl Parser<'a, Vec<u32>> {
+pub fn array_u32<'a>() -> impl Parser<'a, Vec<u32>> {
     let number_str = 
     one_or_more(
         pred(
