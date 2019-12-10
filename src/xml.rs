@@ -32,6 +32,40 @@ pub struct Element {
     pub data_or_elements: DataOrElements,
 }
 
+impl Element {
+    pub fn get_attrib_value<'a>(&'a self, expected_attrib_name: String) -> Result<&'a str, String> {
+        for (attrib_name, attrib_val) in &self.attributes {
+            if expected_attrib_name == *attrib_name {
+                return Ok(attrib_val);
+            }
+        }
+        Err(format!("cant find attrib with name {}",expected_attrib_name))
+    }
+
+    pub fn get_child_by_attrib(&self, attrib: (String,String)) -> Result<&Element, String> {
+        if let DataOrElements::Elements(children) = &self.data_or_elements {
+            for element in children {
+                for (attrib_name, attrib_val) in &element.attributes {
+                    if attrib.0 == *attrib_name && attrib.1 == *attrib_val {
+                        return Ok(element);
+                    }
+                }
+            }
+        }
+        Err(format!("cant find element by attrib ({}, {})", attrib.0, attrib.1))
+    }
+
+    pub fn get_child_by_name(&self, name: String) -> Result<&Element, String> {
+        if let DataOrElements::Elements(children) = &self.data_or_elements {
+            for child in children {
+                if child.name == name {
+                    return Ok(child);
+                }
+            }
+        }
+        Err(format!("cant find child by name: {}", name))
+    }
+}
 
 // -- parsers --------------------------------------------------------------------------
 
