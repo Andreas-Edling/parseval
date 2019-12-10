@@ -32,11 +32,19 @@ pub struct Element {
     pub data_or_elements: DataOrElements,
 }
 
+
+// -- parsers --------------------------------------------------------------------------
+
 pub fn element<'a>() -> impl Parser<'a, Element> {
     trim(either(single_element(), parent_element()))
 }
 
-
+pub fn element_with_name<'a>(expected_name: String) -> impl Parser<'a, Element> {
+    pred(
+        trim(either(single_element(), parent_element())),
+        move |elem| elem.name == expected_name
+    )
+}
 
 fn identifier(input: &str) -> ParseResult<String> {
     let mut matched = String::new();
@@ -48,7 +56,7 @@ fn identifier(input: &str) -> ParseResult<String> {
     }
 
     while let Some(next) = chars.next() {
-        if next.is_alphanumeric() || next == '-' || next == ':' {
+        if next.is_alphanumeric() || next == '-' || next == '_' || next == ':' {
             matched.push(next);
         } else {
             break;
@@ -94,6 +102,7 @@ pub fn single_element<'a>() -> impl Parser<'a, Element> {
         }
     )
 }
+
 
 pub fn xml_definition_element<'a>() -> impl Parser<'a, Element> {
     let start = right(
@@ -170,7 +179,7 @@ fn parent_element<'a>() -> impl Parser<'a, Element> {
         |elem1|{
             map(
                 left(
-                    data_or_elements(), //zero_or_more(element()), 
+                    data_or_elements(),
                     closing_element(elem1.name.clone())
                 ),
                 move |data_or_elements| {
@@ -188,7 +197,7 @@ fn parent_element<'a>() -> impl Parser<'a, Element> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+ 
     #[test]
     fn attribute_parser() {
         assert_eq!(
@@ -239,26 +248,6 @@ mod tests {
         let expected = Element {
             name: "elem".to_string(),
             data_or_elements: DataOrElements::Data("foo".to_string()),
-            attributes: vec![],
-        };
-        assert_eq!(res, Ok(("",expected)));
-    }
-
-    //#[test]
-    fn test_elements_with_inner() {
-        let doc = r#"<elem><inner_elem/></elem>"#;
-        let res = element().parse(doc);
-        let expected = Element {
-            name: "elem".to_string(),
-            data_or_elements: DataOrElements::Elements(
-                vec![
-                    Element{ 
-                        name: "inner_element".to_string(),
-                        data_or_elements: DataOrElements::Data("".to_string()),
-                        attributes: vec![],
-                    }
-                ]
-            ),
             attributes: vec![],
         };
         assert_eq!(res, Ok(("",expected)));
