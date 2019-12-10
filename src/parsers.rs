@@ -211,6 +211,54 @@ where
     )
 }
 
+// -- data parsers --------------------------------------------------------------
+
+
+pub fn parse_array_f32<'a>() -> impl Parser<'a, Vec<f32>> {
+    
+    let number =
+        one_or_more(
+            pred(
+                any_char,
+                |c| c.is_ascii_digit() || *c == '-' || *c == '.' || *c == 'e' || *c == 'E'
+            )
+        );
+
+    let number = map(
+        left(
+            number, 
+            whitespace0()
+        ),
+        |chars| {
+            let string: String = chars.into_iter().collect();
+            let num = string.parse::<f32>().unwrap();
+            num
+        }
+    );
+
+    zero_or_more(number)
+}
+
+pub fn parse_array_u32<'a>() -> impl Parser<'a, Vec<u32>> {
+    let number_str = 
+    one_or_more(
+        pred(
+            any_char,
+            |c| c.is_ascii_digit() || *c == '-'
+        )
+    );
+
+    let number = map(
+        left(number_str, whitespace0()),
+        |chars| {
+            let string: String = chars.into_iter().collect();
+            let num = string.parse::<u32>().unwrap();
+            num
+        }
+    );
+
+    zero_or_more(number)
+}
 
 // -- 'raw' parsers -------------------------------------------------------------
 
