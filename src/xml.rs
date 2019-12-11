@@ -3,6 +3,7 @@
 use crate::parsers::{
     Parser,
     ParseResult,
+    ParsingError,
     pair,
     left,
     right,
@@ -33,16 +34,16 @@ pub struct Element {
 }
 
 impl Element {
-    pub fn get_attrib_value<'a>(&'a self, expected_attrib_name: &str) -> Result<&'a str, String> {
+    pub fn get_attrib_value<'a>(&'a self, expected_attrib_name: &str) -> Result<&'a str, ElementError> {
         for (attrib_name, attrib_val) in &self.attributes {
             if expected_attrib_name == *attrib_name {
                 return Ok(attrib_val);
             }
         }
-        Err(format!("cant find attrib with name {}",expected_attrib_name))
+        Err(ElementError::CantGetAttribValue(expected_attrib_name.to_string()))
     }
 
-    pub fn get_child_by_attrib(&self, attrib: (&str, String)) -> Result<&Element, String> {
+    pub fn get_child_by_attrib(&self, attrib: (&str, String)) -> Result<&Element, ElementError> {
         if let DataOrElements::Elements(children) = &self.data_or_elements {
             for element in children {
                 for (attrib_name, attrib_val) in &element.attributes {
@@ -52,10 +53,10 @@ impl Element {
                 }
             }
         }
-        Err(format!("cant find element by attrib ({}, {})", attrib.0, attrib.1))
+        Err(ElementError::CantGetChildByAttrib((attrib.0.to_string(), attrib.1)))
     }
 
-    pub fn get_child_by_name(&self, name: &str) -> Result<&Element, String> {
+    pub fn get_child_by_name(&self, name: &str) -> Result<&Element, ElementError> {
         if let DataOrElements::Elements(children) = &self.data_or_elements {
             for child in children {
                 if child.name == name {
@@ -63,8 +64,15 @@ impl Element {
                 }
             }
         }
-        Err(format!("cant find child by name: {}", name))
+        Err(ElementError::CantGetChildByName(name.to_string()))
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ElementError {
+    CantGetAttribValue(String),
+    CantGetChildByAttrib((String, String)),
+    CantGetChildByName(String),
 }
 
 // -- parsers --------------------------------------------------------------------------
@@ -86,7 +94,7 @@ fn identifier(input: &str) -> ParseResult<String> {
 
     match chars.next() {
         Some(next) if next.is_alphabetic() => matched.push(next),
-        _ => return Err(input),
+        _ => return Err(ParsingError::FailedWith(input.to_string())),
     }
 
     while let Some(next) = chars.next() {

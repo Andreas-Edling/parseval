@@ -1,5 +1,10 @@
 
-pub type ParseResult<'a, T> = Result<(&'a str, T), &'a str>;
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ParsingError {
+    FailedWith(String),
+}
+
+pub type ParseResult<'a, T> = Result<(&'a str, T), ParsingError>;
 
 pub trait Parser<'a, Output> {
     fn parse(&self, input: &'a str) -> ParseResult<'a, Output>;
@@ -40,7 +45,7 @@ pub fn match_literal<'a>(expected: &'static str) -> impl Parser<'a, ()> {
     move |input: &'a str| {
         match input.get(0..expected.len()) {
             Some(next) if next == expected => Ok((&input[expected.len()..], ())),
-            _ => Err(input),
+            _ => Err(ParsingError::FailedWith(input.to_string())),
         }
     }
 }
@@ -102,7 +107,7 @@ where
     move |input| {
         match parser.parse(input) {
             Ok((remaining_input, value)) if predicate(&value) => Ok((remaining_input, value)),
-            _ => Err(input)
+            _ => Err(ParsingError::FailedWith(input.to_string()))
         }
     }
 }
@@ -131,7 +136,7 @@ where
             input = remaining_input;
             result_vec.push(value);
         } else {
-            return Err(input);
+            return Err(ParsingError::FailedWith(input.to_string()));
         }
 
         while let Ok((remaining_input, value)) = parser.parse(input) {
@@ -265,6 +270,6 @@ pub fn array_u32<'a>() -> impl Parser<'a, Vec<u32>> {
 pub fn any_char(input: &str) -> ParseResult<char> {
     match input.chars().next() {
         Some(next) => Ok((&input[next.len_utf8()..], next)),
-        _ => Err(input),
+        _ => Err(ParsingError::FailedWith(input.to_string())),
     }
 }
