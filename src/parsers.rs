@@ -236,8 +236,7 @@ pub fn array_f32<'a>() -> impl Parser<'a, Vec<f32>> {
         ),
         |chars| {
             let string: String = chars.into_iter().collect();
-            let num = string.parse::<f32>().unwrap();
-            num
+            string.parse::<f32>().unwrap()
         }
     );
 
@@ -257,8 +256,7 @@ pub fn array_u32<'a>() -> impl Parser<'a, Vec<u32>> {
         left(number_str, whitespace0()),
         |chars| {
             let string: String = chars.into_iter().collect();
-            let num = string.parse::<u32>().unwrap();
-            num
+            string.parse::<u32>().unwrap()
         }
     );
 
