@@ -75,6 +75,26 @@ pub enum ElementError {
     CantGetChildByName(String),
 }
 
+impl std::fmt::Display for ElementError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ElementError::CantGetAttribValue(s) => write!(f,"ElementError::CantGetAttribValue: {}",s),
+            ElementError::CantGetChildByAttrib((k,v)) => write!(f,"ElementError::CantGetChildByAttrib: ({},{})", k, v),
+            ElementError::CantGetChildByName(s) => write!(f,"ElementError::CantGetChildByName: {}",s),
+        }
+    }
+}
+
+impl std::error::Error for ElementError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ElementError::CantGetAttribValue(_) => None,
+            ElementError::CantGetChildByAttrib((_,_)) => None,
+            ElementError::CantGetChildByName(_) => None,
+        }
+    }
+}
+
 // -- parsers --------------------------------------------------------------------------
 
 pub fn element<'a>() -> impl Parser<'a, Element> {
