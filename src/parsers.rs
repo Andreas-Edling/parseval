@@ -4,6 +4,22 @@ pub enum ParsingError {
     FailedWith(String),
 }
 
+impl std::fmt::Display for ParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParsingError::FailedWith(s) => write!(f,"ParsingError failed with remaining data to parse: {}",s),
+        }
+    }
+}
+
+impl std::error::Error for ParsingError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ParsingError::FailedWith(_) => None,
+        }
+    }
+}
+
 pub type ParseResult<'a, T> = Result<(&'a str, T), ParsingError>;
 
 pub trait Parser<'a, Output> {
