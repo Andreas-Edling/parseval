@@ -66,6 +66,13 @@ impl Element {
         }
         Err(ElementError::CantGetChildByName(name.to_string()))
     }
+
+    pub fn get_as_data(&self) -> Result<&str, ElementError> {
+        match &self.data_or_elements {
+            DataOrElements::Data(data) => Ok(data), 
+            DataOrElements::Elements(_) => Err(ElementError::CantGetAsData),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -73,6 +80,7 @@ pub enum ElementError {
     CantGetAttribValue(String),
     CantGetChildByAttrib((String, String)),
     CantGetChildByName(String),
+    CantGetAsData,
 }
 
 impl std::fmt::Display for ElementError {
@@ -81,6 +89,7 @@ impl std::fmt::Display for ElementError {
             ElementError::CantGetAttribValue(s) => write!(f,"ElementError::CantGetAttribValue: {}",s),
             ElementError::CantGetChildByAttrib((k,v)) => write!(f,"ElementError::CantGetChildByAttrib: ({},{})", k, v),
             ElementError::CantGetChildByName(s) => write!(f,"ElementError::CantGetChildByName: {}",s),
+            ElementError::CantGetAsData => write!(f, "ElementError::CantGetAsData (child is element, not data)"),
         }
     }
 }
@@ -91,6 +100,7 @@ impl std::error::Error for ElementError {
             ElementError::CantGetAttribValue(_) => None,
             ElementError::CantGetChildByAttrib((_,_)) => None,
             ElementError::CantGetChildByName(_) => None,
+            ElementError::CantGetAsData => None,
         }
     }
 }
