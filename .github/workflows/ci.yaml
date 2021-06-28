@@ -6,7 +6,7 @@ jobs:
     name: Build
     strategy:
       matrix:
-        kind: ['linux', 'windows']
+        kind: ['linux', 'windows', 'wasm']
         include:
           - kind: linux
             os: ubuntu-latest
@@ -14,6 +14,9 @@ jobs:
           - kind: windows
             os: windows-latest
             target: x86_64-pc-windows-msvc
+          - kind: wasm
+            os: ubuntu-latest
+            target: wasm32-unknown-unknown
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install stable toolchain
@@ -34,5 +37,3 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.target }} 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
