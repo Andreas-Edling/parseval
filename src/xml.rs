@@ -127,7 +127,7 @@ fn identifier(input: &str) -> ParseResult<String> {
         _ => return Err(ParsingError::FailedWith(input.to_string())),
     }
 
-    while let Some(next) = chars.next() {
+    for next in chars {
         if next.is_alphanumeric() || next == '-' || next == '_' || next == ':' {
             matched.push(next);
         } else {
