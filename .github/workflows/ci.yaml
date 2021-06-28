@@ -1,0 +1,38 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+jobs:
+  release:
+    name: Build
+    strategy:
+      matrix:
+        kind: ['linux', 'windows']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - kind: windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Fetch crates
+        uses: actions-rs/cargo@v1
+        with:
+          command: fetch
+          args: --target ${{ matrix.target }}
+      - name: Release build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }} --features embedded-web
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
